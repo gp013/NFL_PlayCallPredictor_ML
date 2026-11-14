@@ -1,25 +1,27 @@
-import pandas as pd
 import nflreadpy as nfl
+import pandas as pd
 
 
-class DataCleaner():
 
-    def load_data():
+class DataCleaner:
+    
+    def load_data() -> pd.DataFrame:
         pbp = nfl.load_pbp(
-            seasons=[2020,2021,2022,2023,2024,2025,2026]
+            seasons=[2023, 2024, 2025, 2026]
         )
         
         pbp = pbp.to_pandas()
 
         return pbp
 
-    def clean_data(pbp):
-        pbp = pbp[['posteam', 'defteam', 'qtr', 'quarter_seconds_remaining', 'down', 'ydstogo', 'posteam_score', 'defteam_score', 'home_team', 'away_team', 'week','yardline_100', 'play_type']]
+    def clean_data(pbp: pd.DataFrame) -> pd.DataFrame:
+        pbp = pbp[['posteam', 'defteam', 'qtr', 'quarter_seconds_remaining', 'down', 'ydstogo', 'posteam_score', 'defteam_score', 'home_team', 'away_team', 'week','yardline_100','shotgun', 'play_type']]
         pbp = pbp.loc[pbp['play_type'].isin(['pass', 'run'])]
+        pbp = pbp.dropna()
         
         return pbp
 
-    def encode(pbp):
+    def encode(pbp: pd.DataFrame) -> pd.DataFrame:
         # encode home team and posteam/defteam to be the same
         teams = set(pbp["home_team"]) | (set(pbp["away_team"]) | (set(pbp["posteam"])) | (set(pbp["defteam"])))
         teams = sorted(teams)
@@ -44,16 +46,21 @@ class DataCleaner():
 
         return pbp
 
-    def features(pbp):
-        # in redzone 0/1 (no/yes), score differential,  
+    def features(pbp: pd.DataFrame) -> pd.DataFrame:
+        # in redzone 0/1 (no/yes), score differential
         
         pbp["in_redzone"] = (pbp["yardline_100"] <= 20).astype(int)
-
         pbp["score_diff"] = (pbp["posteam_score"] - pbp["defteam_score"])
-        
+
         return pbp
 
-        
+    def X_y_split(pbp: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
+
+        # HomeTeamID, AwayTeamID, posteamID, defteamID, qtr, quarter_seconds_remaing, down, ydstogo, posteam_score, defteam_score, week, yardline_100, shotgun, 
+        X = pbp[["HomeTeamID", "AwayTeamID", "posteamID", "defteamID", "qtr", "quarter_seconds_remaining", "down", "ydstogo", "posteam_score", "defteam_score", "week", "yardline_100", "in_redzone", "score_diff"]]
+        y = pbp["result"]
+
+        return X, y
         
     
     
