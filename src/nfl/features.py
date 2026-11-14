@@ -1,7 +1,8 @@
 from data_cleaner import DataCleaner
 from model import Model
-from sklearn.model_selection import train_test_split
 import pandas as pd
+from sklearn.model_selection import train_test_split
+
 
 class Features:
 
@@ -159,24 +160,7 @@ class Features:
                 f.close()
                 
         except FileNotFoundError:
-            with open("predicts.txt", "w") as f:
-                for i in range (0,32):
-                    team = teams[i] 
-                    df = pbp.loc[pbp["posteamID"] == i]
-                    
-                    X, y = DataCleaner.X_y_split(df)
-                    
-                    X_train, X_test, y_train, y_test = train_test_split(
-                        X, y, test_size=0.2, train_size =0.8, random_state=42
-                    )
-                    model.train(X_train, y_train)
-
-                    accuracy = model.evaluate(X_test, y_test)
-                    accuracy *= 100
-
-                    f.write(team + ": " + str(accuracy) + "\n")
-
-                f.close()
+            set_predicts(pbp)
             
             with open("predicts.txt", "r") as f:
                 percentages = []
@@ -200,8 +184,32 @@ class Features:
 
                 f.close()
     
-    
-    def live_game(pbp, model):
+    def set_predicts(pbp: pd.DataFrame) -> None:
+        with open("predicts.txt", "w") as f:
+                for i in range (0,32):
+                    team = teams[i] 
+                    df = pbp.loc[pbp["posteamID"] == i]
+                    
+                    X, y = DataCleaner.X_y_split(df)
+                    
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y, test_size=0.2, train_size =0.8, random_state=42
+                    )
+                    model.train(X_train, y_train)
+
+                    accuracy = model.evaluate(X_test, y_test)
+                    accuracy *= 100
+
+                    f.write(team + ": " + str(accuracy) + "\n")
+
+                f.close()
+
+    def get_all_teams() -> None:
+        with open("predicts.txt", "r") as f:
+            for line in f:
+                print(line)
+
+    def live_game(pbp: pd.DataFrame, model: Model) -> None:
         
         
         # Get Variables for features
@@ -219,9 +227,6 @@ class Features:
         yardline: float = float(input("Yards from endzone: "))
         down: float = float(input("Down: "))
         ydstogo: float = float(input("Yards to first down: "))
-
-        
-        
 
         # format into float/int data types
 
@@ -291,7 +296,7 @@ class Features:
                 score_diff = float(posteam_score - defteam_score)
             
 
-                #Time update
+            #Time update
             prev_seconds = seconds
             time = input("Update Time(format 15:00): ")
             minutes = float(time.split(":")[0]) * 60
